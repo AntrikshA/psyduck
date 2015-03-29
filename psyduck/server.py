@@ -15,49 +15,42 @@ p = pyaudio.PyAudio()
 stream = p.open(format = FORMAT,
                 channels = CHANNELS,
                 rate = RATE,
-                output = True)
+                output = True,
+                input = True,
+                frames_per_buffer = chunk)
 
 # Socket Initialization
 host = ''
-port = 50002
-backlog = 5
+port = 50000
+backlog = 10
 size = 1024
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((host,port))
 s.listen(backlog)
 
 client, address = s.accept()
+print "Connected to " + ''.join(map(str,address))
 
 #window
-class Window(QtGui.QWidget):
+class Window(QtGui.QMainWindow):
     def __init__(self):
         QtGui.QWidget.__init__(self)
         self.resize(250, 350)
         self.move(200, 300)
         self.setWindowTitle('Server')
-        data = client.recv(size)
-        if data:
-            self.button = QtGui.QPushButton('Disconnect', self)
-            self.connect(self.button, QtCore.SIGNAL('clicked()'), self.disconnect)
-            layout = QtGui.QVBoxLayout(self)
-            layout.addWidget(self.button)
-            self.button = QtGui.QPushButton('Attend', self)
-            self.button.clicked.connect(self.attendCall)
-            layout = QtGui.QVBoxLayout(self)
-            layout.addWidget(self.button)
+        self.setStyleSheet("QMainWindow { background: 'black'}")
+        self.button = QtGui.QPushButton('Call', self)
+        self.button.resize(100,30)
+        self.button.move(75,175)
+        self.button.clicked.connect(self.handleButton)
+        layout = QtGui.QVBoxLayout(self)
+        layout.addWidget(self.button)
 
-    def attendCall(self):
-        while 1:            
-            data = client.recv(size)
-            if data:
-                #Write data to pyaudio stream
-                stream.write(data)  # Stream the recieved audio data
-                client.send('ACK')  # Send an ACK
-                
-    def disconnect(self):
-        print "Disconnecting..."
-        self.deleteLater()
-        
+    def handleButton(self):
+        while 1:
+            data = stream.read(chunk)
+            client.send(data)
+            client.recv(size)
         
 # Main Functionality
 if __name__ == '__main__':
@@ -65,7 +58,7 @@ if __name__ == '__main__':
 
     w = Window()
     w.show()
-    
+
     sys.exit(app.exec_())
 
 client.close()
