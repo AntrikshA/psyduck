@@ -38,7 +38,7 @@ class Window(QtGui.QWidget):
         data = client.recv(size)
         if data:
             self.button = QtGui.QPushButton('Disconnect', self)
-            self.button.clicked.connect(self.disconnectCall)
+            self.connect(self.button, QtCore.SIGNAL('clicked()'), self.disconnect)
             layout = QtGui.QVBoxLayout(self)
             layout.addWidget(self.button)
             self.button = QtGui.QPushButton('Attend', self)
@@ -53,20 +53,10 @@ class Window(QtGui.QWidget):
                 #Write data to pyaudio stream
                 stream.write(data)  # Stream the recieved audio data
                 client.send('ACK')  # Send an ACK
-                self.button = QtGui.QPushButton('Disconnect', self)
-                layout = QtGui.QVBoxLayout(self)
-                layout.addWidget(self.button)
                 
-            elif self.button.clicked():
-                self.button.clicked.connect(self.disconnectCall)
-                
-    def disconnectCall(self):
-        self.connect(self, QtCore.SIGNAL('triggered()'), self.closeEvent)
-
-    def closeEvent(self,event):
+    def disconnect(self):
         print "Disconnecting..."
         self.deleteLater()
-        event.accept()
         
         
 # Main Functionality
