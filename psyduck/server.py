@@ -1,5 +1,6 @@
 import pyaudio
 import socket
+from thread import *
 import sys
 from PyQt4 import QtGui, QtCore, uic
 import sys
@@ -21,45 +22,57 @@ stream = p.open(format = FORMAT,
 
 # Socket Initialization
 host = ''
-port = 50000
+port = 5000
 backlog = 10
 size = 1024
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((host,port))
 s.listen(backlog)
 
-client, address = s.accept()
-print "Connected to " + ''.join(map(str,address))
+def clientthread(client):
+    while True:
+        client.send('Connected to server\n')
+        print ''.join(map(str,client)) + " has entered connection !"
+        data = client.recv(size)
+        print data
 
-#window
-class Window(QtGui.QMainWindow):
-    def __init__(self):
-        QtGui.QWidget.__init__(self)
-        self.resize(250, 350)
-        self.move(200, 300)
-        self.setWindowTitle('Server')
-        self.setStyleSheet("QMainWindow { background: 'black'}")
-        self.button = QtGui.QPushButton('Call', self)
-        self.button.resize(100,30)
-        self.button.move(75,175)
-        self.button.clicked.connect(self.handleButton)
-        layout = QtGui.QVBoxLayout(self)
-        layout.addWidget(self.button)
+while True:
+    client, address = s.accept()
+    start_new_thread(clientthread,(client,))
 
-    def handleButton(self):
-        while 1:
-            data = stream.read(chunk)
-            client.send(data)
-            client.recv(size)
+    #window
+    class Window(QtGui.QMainWindow):
+        def __init__(self):
+            QtGui.QWidget.__init__(self)
+            self.resize(250, 350)
+            self.move(200, 300)
+            self.setWindowTitle('Server')
+            self.setStyleSheet("QMainWindow { background: 'black'}")
+            self.button = QtGui.QPushButton('Call', self)
+            self.button.resize(100,30)
+            self.button.move(75,175)
+            self.button.clicked.connect(self.handleButton)
+            layout = QtGui.QVBoxLayout(self)
+            layout.addWidget(self.button)
+
+        def handleButton(self):
+            while 1:
+                data = stream.read(chunk)
+                client.send(data)
+                client.recv(size)
+
+    if __name__ == '__main__':
+        app = QtGui.QApplication(sys.argv)
+
+        w = Window()
+        w.show()
+
+        sys.exit(app.exec_())
+
+
         
 # Main Functionality
-if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
 
-    w = Window()
-    w.show()
-
-    sys.exit(app.exec_())
 
 client.close()
 stream.close()
